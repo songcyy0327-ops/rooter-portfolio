@@ -1,0 +1,11 @@
+# 대용량 원본 백업 / 로컬 임시 (배포 불필요)
+models/seed_full.glb
+_캡처/
+_serve.js
+열기.bat
+
+# 시스템 / 도구
+node_modules/
+.vercel/
+.DS_Store
+Thumbs.db
