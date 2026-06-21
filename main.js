@@ -1,14 +1,14 @@
-import * as THREE from 'three';
-import { GLTFLoader } from './libs/GLTFLoader.js';
 import { PROJECTS, VIZ } from './projects.js';
 
 const gallery = document.getElementById('gallery');
 
-// ===== 히어로 미니 씨앗 (사용자 GLB · 작게 · 45도 눕혀 회전) =====
-(function () {
+// ===== 히어로 미니 씨앗 (지연 로딩: 첫 화면 후 three.js+GLB, 화면 밖이면 회전 정지) =====
+async function initSeed() {
   const c = document.getElementById('seed');
   if (!c) return;
   try {
+    const THREE = await import('three');
+    const { GLTFLoader } = await import('./libs/GLTFLoader.js');
     const renderer = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     const resize = () => { const w = c.clientWidth || 240; renderer.setSize(w, w, false); };
@@ -33,26 +33,33 @@ const gallery = document.getElementById('gallery');
       m.position.set(-center.x * s, -center.y * s, -center.z * s); // 중심을 holder 원점으로
       holder.add(m);
     });
-    (function spin() { holder.rotation.y += 0.02; renderer.render(scene, camera); requestAnimationFrame(spin); })();
+    let running = false;
+    const frame = () => { if (!running) return; holder.rotation.y += 0.02; renderer.render(scene, camera); requestAnimationFrame(frame); };
+    new IntersectionObserver((es) => {
+      const vis = es[0].isIntersecting;
+      if (vis && !running) { running = true; frame(); } else if (!vis) { running = false; }
+    }, { threshold: 0 }).observe(c);
   } catch (e) { /* WebGL 미지원 시 무시 */ }
-})();
+}
+if ('requestIdleCallback' in window) requestIdleCallback(() => initSeed(), { timeout: 2500 });
+else addEventListener('load', () => setTimeout(initSeed, 200));
 
 // ===== 갤러리 카드 (FRAMA식, 빨강 포인트) =====
-const THUMBS = ['thumbs/01_brandi.png', 'thumbs/06_anaconda.png', 'thumbs/09_nyangssaem.png', 'thumbs/08_brandi_haru.png',
-  'thumbs/02_rareraw.png', 'thumbs/03_oliveyoung.png', 'thumbs/04_ohou.png', 'thumbs/05_wadiz.png', 'thumbs/10_sheismiss.png',
-  'subs/s1.jpg', 'subs/s2.jpg', 'subs/s3.jpg', 'subs/s4.jpg', 'subs/b1.jpg', 'subs/b2.jpg', 'subs/b3.jpg', 'subs/b4.jpg']; // 9~16 서브
+const THUMBS = ['thumbs/01_brandi.webp', 'thumbs/06_anaconda.webp', 'thumbs/09_nyangssaem.webp', 'thumbs/08_brandi_haru.webp',
+  'thumbs/02_rareraw.webp', 'thumbs/03_oliveyoung.webp', 'thumbs/04_ohou.webp', 'thumbs/05_wadiz.webp', 'thumbs/10_sheismiss.webp',
+  'subs/s1.webp', 'subs/s2.webp', 'subs/s3.webp', 'subs/s4.webp', 'subs/b1.webp', 'subs/b2.webp', 'subs/b3.webp', 'subs/b4.webp']; // 9~16 서브
 // 프로젝트별 관련 이미지 (개수 가변: 1장→단일, 2장→2칸, 3장+→롤링 캐러셀)
 // 대표(메인) 이미지 cX_1 은 상단 대표 자리에만 사용 → 관련 이미지에서는 제외
 const CASES = [
-  ['cases/c0_2.png', 'cases/c0_3.png'],
-  ['cases/c1_2.png', 'cases/c1_3.png'],
-  ['cases/c2_2.png', 'cases/c2_3.png', 'cases/c2_4.png', 'cases/c2_5.png'],
-  ['cases/c3_2.png', 'cases/c3_3.png'],
-  ['cases/c4_2.png', 'cases/c4_3.png'],
-  ['cases/c5_2.png'], // 5 = ③ 올리브영 (올리브영 2)
-  ['cases/c6_2.png', 'cases/c6_3.png'],
-  ['cases/c7_2.png', 'cases/c7_4.png', 'cases/c7_5.png'],
-  ['cases/c8_2.png', 'cases/c8_3.png', 'cases/c8_4.png'],
+  ['cases/c0_2.webp', 'cases/c0_3.webp'],
+  ['cases/c1_2.webp', 'cases/c1_3.webp'],
+  ['cases/c2_2.webp', 'cases/c2_3.webp', 'cases/c2_4.webp', 'cases/c2_5.webp'],
+  ['cases/c3_2.webp', 'cases/c3_3.webp'],
+  ['cases/c4_2.webp', 'cases/c4_3.webp'],
+  ['cases/c5_2.webp'], // 5 = ③ 올리브영 (올리브영 2)
+  ['cases/c6_2.webp', 'cases/c6_3.webp'],
+  ['cases/c7_2.webp', 'cases/c7_4.webp', 'cases/c7_5.webp'],
+  ['cases/c8_2.webp', 'cases/c8_3.webp', 'cases/c8_4.webp'],
   [], [], [], [], [], [], [], [] // 9~16 서브(단일 히어로 이미지)
 ];
 function renderGallery(i) {
